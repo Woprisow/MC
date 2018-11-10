@@ -16,6 +16,9 @@ EndScriptData */
 #include "ScriptedCreature.h"
 #include "molten_core.h"
 
+Creature* firesworns[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+uint32 fireswornIndex = 0;
+
 enum Spells
 {
     // Garr
@@ -45,11 +48,28 @@ class boss_garr : public CreatureScript
             {
             }
 
-            void EnterCombat(Unit* victim)
-            {
-                BossAI::EnterCombat(victim);
-                events.ScheduleEvent(EVENT_ANTIMAGIC_PULSE, 25000);
-                events.ScheduleEvent(EVENT_MAGMA_SHACKLES, 15000);
+			void reset()
+			{
+				_Reset();
+				for (int i = 0; i < 8; i++) {
+					if (firesworns[i] != NULL)
+					{
+						firesworns[i]->Respawn();
+					}
+				}
+			}
+
+			void EnterCombat(Unit* victim)
+			{
+				BossAI::EnterCombat(victim);
+				events.ScheduleEvent(EVENT_ANTIMAGIC_PULSE, 25000);
+				events.ScheduleEvent(EVENT_MAGMA_SHACKLES, 15000);
+
+				//Reset array of creature pointers for firesworns
+				for (int i = 0; i < 8; i++) {
+					firesworns[i] = NULL;
+				}
+				fireswornIndex = 0;
             }
 
             void UpdateAI(uint32 diff)
@@ -105,6 +125,7 @@ class npc_firesworn : public CreatureScript
                 immolateTimer = 4000;                              //These times are probably wrong
             }
 
+
             void DamageTaken(Unit*, uint32& damage, DamageEffectType, SpellSchoolMask)
             {
                 uint32 const health10pct = me->CountPctFromMaxHealth(10);
@@ -114,6 +135,8 @@ class npc_firesworn : public CreatureScript
                     damage = 0;
                     DoCastVictim(SPELL_ERUPTION);
                     me->DespawnOrUnsummon();
+					firesworns[fireswornIndex] = me;
+					fireswornIndex++;
                 }
             }
 
